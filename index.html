@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>סידור רכבים משפחתי</title>
+<style>
+body { font-family: Arial, sans-serif; background:#f0f2f5; margin:0; padding:0; }
+h1,h2,h3 { text-align:center; margin:10px 0; }
+.container { max-width: 1000px; margin:auto; padding:20px; }
+.card { background:#fff; padding:20px; border-radius:10px; box-shadow:0 4px 8px rgba(0,0,0,0.1); margin-bottom:20px; }
+button { padding:10px 20px; margin:10px; border:none; border-radius:6px; background:#4CAF50; color:white; cursor:pointer; font-size:1em;}
+button:hover { background:#45a049; }
+table { border-collapse: collapse; width:100%; margin:15px 0; }
+th,td { border:1px solid #ccc; padding:8px; text-align:center; }
+th { background:#eee; }
+textarea { width:100%; box-sizing:border-box; margin-top:10px; padding:8px; border-radius:6px; border:1px solid #ccc; resize:none; }
+input { padding:8px; border-radius:6px; border:1px solid #ccc; width:200px; }
+.hidden { display:none; }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+<h1>סידור רכבים משפחתי</h1>
+
+<!-- עמוד 1: התחברות -->
+<div id="loginPage" class="card">
+<h2>כניסה למערכת</h2>
+<label>תעודת זהות:</label>
+<input type="text" id="loginId" placeholder="הכנס תעודת זהות">
+<br><br>
+<button onclick="login()">התחבר</button>
+</div>
+
+<!-- עמוד 2: עריכת משמרות -->
+<div id="editPage" class="card hidden">
+<h2>עריכת משמרות והעדפות</h2>
+<div id="userNameDisplay"></div>
+<table id="requestTable">
+<tr>
+<th>יום</th>
+<th>משמרת</th>
+<th>עדיפות</th>
+</tr>
+</table>
+
+<label>הערות / בקשות הסעה:</label>
+<textarea id="notes" rows="4" placeholder="לכתוב כאן לדוגמה: שני צריך הסעה ביום ראשון בבוקר"></textarea>
+
+<div style="text-align:center;">
+<button id="saveBtn" onclick="saveRequest()">שמור בחירות</button>
+<button id="resetBtn" onclick="resetRequests()">אפס הכל</button>
+<button id="generateBtn" onclick="goToPage3()">צור מערכת</button>
+<button onclick="logout()">התנתק</button>
+</div>
+</div>
+
+<!-- עמוד 3: תצוגת מערכת -->
+<div id="schedulePage" class="card hidden">
+<h2>מערכת שבועית</h2>
+<div id="scheduleResult"></div>
+<button onclick="backToEdit()">חזור לעריכה</button>
+<button onclick="logout()">התנתק</button>
+</div>
+
+</div>
+
+<script>
+const days = ["ראשון","שני","שלישי","רביעי","חמישי","שישי","שבת"];
+const shifts = ["08-16","16-00"];
+const requests = {};
+let currentUser = null;
+
+// --- משתמשים ותעודות זהות ---
+const users = {
+  "207933169": "איתי",
+  "002": "אושירה",
+  "003": "יצחק",
+  "004": "שני",
+  "005": "אורי"
+};
+
+// --- רכב והגבלות ---
+const carPermissions = {
+  "טויוטה": ["יצחק"],
+  "מאזדה 6": ["שני","איתי","אורי"],
+  "מאזדה 2": ["אושירה","איתי"]
+};
+const busAllowed = ["שני","איתי"];
+
+// --- התחברות ---
+function login(){
+  const id = document.getElementById("loginId").value.trim();
+  if(users[id]){
+    currentUser = users[id];
+    document.getElementById("loginPage").classList.add("hidden");
+    document.getElementById("editPage").classList.remove("hidden");
+    document.getElementById("userNameDisplay").innerText = "שלום, " + currentUser;
+    initTable();
+    loadRequest(currentUser);
+    updateAdminAccess();
+  } else {
+    alert("תעודת זהות לא מוכרת. נסה שוב.");
+  }
+}
+
+// --- יציאה ---
+function logout(){
+  currentUser = null;
+  document.getElementById("loginPage").classList.remove("hidden");
+  document.getElementById("editPage").classList.add("hidden");
+  document.getElementById("schedulePage").classList.add("hidden");
+  document.getElementById("requestTable").innerHTML = "<tr><th>יום</th><th>משמרת</th><th>עדיפות</th></tr>";
+  document.getElementById("notes").value = "";
+}
+
+// --- עיצוב ועבודה עם טבלה ---
+function initTable() {
+  const tbl = document.getElementById("requestTable");
+  tbl.innerHTML = "<tr><th>יום</th><th>משמרת</th><th>עדיפות</th></tr>";
+  for(let day of days){
+    for(let shift of shifts){
+      let row = document.createElement("tr");
+      row.innerHTML = `<td>${day}</td><td>${shift}</td>
+      <td><select>
+      <option value="0">0 - לא צריך רכב</option>
+      <option value="1">1 - רכב לבילוי</option>
+      <option value="2">2 - עבודה/לימודים</option>
+      </select></td>`;
+      tbl.appendChild(row);
+    }
+  }
+}
+
+function saveRequest(){
+  if(!currentUser) return;
+  const rows=document.querySelectorAll("#requestTable tr");
+  requests[currentUser]={};
+  let rowIdx=0;
+  rows.forEach((row,idx)=>{
+    if(idx===0) return;
+    const day=days[Math.floor(rowIdx/2)];
+    const shift=shifts[rowIdx%2];
+    const priority=row.cells[2].querySelector("select").value;
+    if(!requests[currentUser][day]) requests[currentUser][day]={};
+    requests[currentUser][day][shift]={priority:parseInt(priority)};
+    rowIdx++;
+  });
+  requests[currentUser].notes=document.getElementById("notes").value;
+  alert("הבחירות נשמרו!");
+}
+
+function loadRequest(name){
+  const rows=document.querySelectorAll("#requestTable tr");
+  let rowIdx=0;
+  rows.forEach((row,idx)=>{
+    if(idx===0) return;
+    const day=days[Math.floor(rowIdx/2)];
+    const shift=shifts[rowIdx%2];
+    let data=(requests[name] && requests[name][day] && requests[name][day][shift])?requests[name][day][shift]:{priority:0};
+    row.cells[2].querySelector("select").value=data.priority;
+    rowIdx++;
+  });
+  document.getElementById("notes").value=(requests[name] && requests[name].notes)?requests[name].notes:"";
+}
+
+// --- עדכון הרשאות ניהול ---
+function updateAdminAccess() {
+  document.getElementById("resetBtn").style.display = (currentUser==="איתי")?"inline-block":"none";
+  document.getElementById("generateBtn").style.display = (currentUser==="איתי")?"inline-block":"none";
+}
+
+// --- איפוס ---
+function resetRequests(){
+  if(!currentUser) return;
+  const rows=document.querySelectorAll("#requestTable tr");
+  rows.forEach((row,idx)=>{if(idx===0) return; row.cells[2].querySelector("select").value=0;});
+  document.getElementById("notes").value="";
+  requests[currentUser]={};
+  days.forEach(day=>{requests[currentUser][day]={};shifts.forEach(shift=>{requests[currentUser][day][shift]={priority:0};});});
+  requests[currentUser].notes="";
+  alert("כל המשמרות והערות אופסו!");
+}
+
+// --- מעבר לעמוד מערכת ---
+function goToPage3(){
+  generateSchedule();
+  document.getElementById("editPage").classList.add("hidden");
+  document.getElementById("schedulePage").classList.remove("hidden");
+}
+
+function backToEdit(){
+  document.getElementById("editPage").classList.remove("hidden");
+  document.getElementById("schedulePage").classList.add("hidden");
+}
+
+// --- יצירת מערכת חכמה ---
+function generateSchedule(){
+  let schedule={};
+  let carUsageCount={};
+
+  for(let d of days){
+    schedule[d]={};
+    for(let sh of shifts){
+      schedule[d][sh]={"טויוטה":null,"מאזדה 6":null,"מאזדה 2":null,"אוטובוס":[]};
+      let assigned={};
+      schedule[d][sh]["טויוטה"]="יצחק";
+      assigned["יצחק"]=true;
+
+      ["מאזדה 6","מאזדה 2"].forEach(car=>{
+        let candidates=[];
+        for(let person in requests){
+          if(requests[person][d] && requests[person][d][sh].priority>0 && !assigned[person]){
+            if(carPermissions[car].includes(person)) candidates.push({name:person,pr:requests[person][d][sh].priority});
+          }
+        }
+        if(candidates.length===0) return;
+        candidates.sort((a,b)=>{
+          if(b.pr!==a.pr) return b.pr - a.pr;
+          return (carUsageCount[a.name]||0)-(carUsageCount[b.name]||0);
+        });
+        let chosen=candidates[0].name;
+        schedule[d][sh][car]=chosen;
+        assigned[chosen]=true;
+        carUsageCount[chosen]=(carUsageCount[chosen]||0)+1;
+      });
+
+      for(let person in requests){
+        if(requests[person][d] && requests[person][d][sh].priority>0 && !assigned[person] && busAllowed.includes(person)){
+          schedule[d][sh]["אוטובוס"].push(person);
+          assigned[person]=true;
+        }
+      }
+    }
+  }
+
+  let html="<h3>מערכת שבועית</h3>";
+  html+="<table><tr><th>יום</th><th>משמרת</th><th>טויוטה</th><th>מאזדה 6</th><th>מאזדה 2</th><th>אוטובוס</th></tr>";
+  for(let d of days){
+    for(let sh of shifts){
+      html+=`<tr>
+      <td>${d}</td>
+      <td>${sh}</td>
+      <td>${schedule[d][sh]["טויוטה"]||""}</td>
+      <td>${schedule[d][sh]["מאזדה 6"]||""}</td>
+      <td>${schedule[d][sh]["מאזדה 2"]||""}</td>
+      <td>${schedule[d][sh]["אוטובוס"].join(", ")}</td>
+      </tr>`;
+    }
+  }
+  html+="</table>";
+
+  // הצגת הערות עם כוכביות
+  html+="<h3>הערות:</h3><ul>";
+  for(let person in requests){
+    if(requests[person].notes && requests[person].notes.trim()!==""){
+      html+=`<li>* ${person}: ${requests[person].notes}</li>`;
+    }
+  }
+  html+="</ul>";
+
+  document.getElementById("scheduleResult").innerHTML=html;
+}
+</script>
+
+</body>
+</html>
