@@ -8,14 +8,27 @@ body { font-family: Arial, sans-serif; background:#f0f2f5; margin:0; padding:0; 
 h1,h2,h3 { text-align:center; margin:10px 0; }
 .container { max-width: 1000px; margin:auto; padding:20px; }
 .card { background:#fff; padding:20px; border-radius:10px; box-shadow:0 4px 8px rgba(0,0,0,0.1); margin-bottom:20px; }
-button { padding:10px 20px; margin:10px; border:none; border-radius:6px; background:#4CAF50; color:white; cursor:pointer; font-size:1em;}
+button { padding:10px 20px; margin:10px; border:none; border-radius:6px; background:#4CAF50; color:white; cursor:pointer; font-size:1em; }
 button:hover { background:#45a049; }
-table { border-collapse: collapse; width:100%; margin:15px 0; }
-th,td { border:1px solid #ccc; padding:8px; text-align:center; }
+table { border-collapse: collapse; width:100%; margin:15px 0; table-layout: fixed; word-wrap: break-word; }
+th,td { border:1px solid #ccc; padding:8px; text-align:center; font-size:0.9em; }
 th { background:#eee; }
 textarea { width:100%; box-sizing:border-box; margin-top:10px; padding:8px; border-radius:6px; border:1px solid #ccc; resize:none; }
-input { padding:8px; border-radius:6px; border:1px solid #ccc; width:200px; }
+input { padding:8px; border-radius:6px; border:1px solid #ccc; width:100%; max-width:250px; }
 .hidden { display:none; }
+
+/* רספונסיביות */
+@media screen and (max-width: 768px) {
+  .container { padding:10px; }
+  table, th, td { font-size:0.8em; }
+  button { padding:8px 15px; font-size:0.9em; margin:5px; }
+  textarea { font-size:0.9em; }
+}
+@media screen and (max-width: 480px) {
+  table, th, td { font-size:0.75em; }
+  button { padding:6px 12px; font-size:0.8em; margin:3px; }
+  textarea { font-size:0.85em; }
+}
 </style>
 </head>
 <body>
@@ -24,7 +37,7 @@ input { padding:8px; border-radius:6px; border:1px solid #ccc; width:200px; }
 
 <h1>סידור רכבים משפחתי</h1>
 
-<!-- עמוד 1: התחברות -->
+<!-- עמוד התחברות -->
 <div id="loginPage" class="card">
 <h2>כניסה למערכת</h2>
 <label>תעודת זהות:</label>
@@ -33,10 +46,11 @@ input { padding:8px; border-radius:6px; border:1px solid #ccc; width:200px; }
 <button onclick="login()">התחבר</button>
 </div>
 
-<!-- עמוד 2: עריכת משמרות -->
+<!-- עמוד עריכת משמרות -->
 <div id="editPage" class="card hidden">
 <h2>עריכת משמרות והעדפות</h2>
 <div id="userNameDisplay"></div>
+<div style="overflow-x:auto;">
 <table id="requestTable">
 <tr>
 <th>יום</th>
@@ -44,6 +58,7 @@ input { padding:8px; border-radius:6px; border:1px solid #ccc; width:200px; }
 <th>עדיפות</th>
 </tr>
 </table>
+</div>
 
 <label>הערות / בקשות הסעה:</label>
 <textarea id="notes" rows="4" placeholder="לכתוב כאן לדוגמה: שני צריך הסעה ביום ראשון בבוקר"></textarea>
@@ -56,7 +71,7 @@ input { padding:8px; border-radius:6px; border:1px solid #ccc; width:200px; }
 </div>
 </div>
 
-<!-- עמוד 3: תצוגת מערכת -->
+<!-- עמוד מערכת שבועית -->
 <div id="schedulePage" class="card hidden">
 <h2>מערכת שבועית</h2>
 <div id="scheduleResult"></div>
@@ -74,7 +89,7 @@ let currentUser = null;
 
 // --- משתמשים ותעודות זהות ---
 const users = {
-  "207933169": "איתי",
+  "001": "איתי",
   "002": "אושירה",
   "003": "יצחק",
   "004": "שני",
@@ -115,7 +130,7 @@ function logout(){
   document.getElementById("notes").value = "";
 }
 
-// --- עיצוב ועבודה עם טבלה ---
+// --- טבלת משמרות ---
 function initTable() {
   const tbl = document.getElementById("requestTable");
   tbl.innerHTML = "<tr><th>יום</th><th>משמרת</th><th>עדיפות</th></tr>";
@@ -165,7 +180,7 @@ function loadRequest(name){
   document.getElementById("notes").value=(requests[name] && requests[name].notes)?requests[name].notes:"";
 }
 
-// --- עדכון הרשאות ניהול ---
+// --- הרשאות מנהל ---
 function updateAdminAccess() {
   document.getElementById("resetBtn").style.display = (currentUser==="איתי")?"inline-block":"none";
   document.getElementById("generateBtn").style.display = (currentUser==="איתי")?"inline-block":"none";
@@ -183,7 +198,7 @@ function resetRequests(){
   alert("כל המשמרות והערות אופסו!");
 }
 
-// --- מעבר לעמוד מערכת ---
+// --- ניווט בין עמודים ---
 function goToPage3(){
   generateSchedule();
   document.getElementById("editPage").classList.add("hidden");
@@ -236,7 +251,7 @@ function generateSchedule(){
   }
 
   let html="<h3>מערכת שבועית</h3>";
-  html+="<table><tr><th>יום</th><th>משמרת</th><th>טויוטה</th><th>מאזדה 6</th><th>מאזדה 2</th><th>אוטובוס</th></tr>";
+  html+="<div style='overflow-x:auto;'><table><tr><th>יום</th><th>משמרת</th><th>טויוטה</th><th>מאזדה 6</th><th>מאזדה 2</th><th>אוטובוס</th></tr>";
   for(let d of days){
     for(let sh of shifts){
       html+=`<tr>
@@ -249,9 +264,9 @@ function generateSchedule(){
       </tr>`;
     }
   }
-  html+="</table>";
+  html+="</table></div>";
 
-  // הצגת הערות עם כוכביות
+  // הערות עם כוכביות
   html+="<h3>הערות:</h3><ul>";
   for(let person in requests){
     if(requests[person].notes && requests[person].notes.trim()!==""){
