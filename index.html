@@ -22,20 +22,6 @@ th, td { border:1px solid #e6e6e6; padding:10px; text-align:center; font-size:1e
 th { background:#fafafa; font-weight:700; }
 .hidden { display:none !important; }
 .table-wrapper { overflow-x:auto; }
-
-/* רספונסיביות */
-@media (max-width:768px) {
-  body { font-size:1.15em; }
-  button { padding:14px 26px; margin:6px; font-size:1.05em; }
-  input, textarea { font-size:1.05em; }
-  th,td { font-size:1.05em; padding:10px; }
-}
-@media (max-width:480px) {
-  body { font-size:1.25em; }
-  button { padding:16px 30px; font-size:1.15em; margin:6px 4px; }
-  input, textarea { font-size:1.15em; }
-  h1,h2,h3 { font-size:1.35em; }
-}
 .note { color:#666; font-size:0.95em; margin-top:8px; }
 </style>
 </head>
@@ -88,12 +74,11 @@ th { background:#fafafa; font-weight:700; }
   </div>
 </div>
 
-<!-- Firebase -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getDatabase, ref, set, get, update, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
-// 🔹 הדבק כאן את Firebase config שלך
+// Firebase config
 const firebaseConfig = {
   apiKey: "AIzaSyC9PTX8tvzhUf1BXW5ZeNbeKJcSF91sNjU",
   authDomain: "family-cars-scheduler.firebaseapp.com",
@@ -124,7 +109,7 @@ const qs = s => document.querySelector(s);
 const show = s => qs(s).classList.remove("hidden");
 const hide = s => qs(s).classList.add("hidden");
 
-// בונה טבלה ומשמרות
+// בונה טבלה
 function initTable(){
   const tbl = qs("#requestTable");
   tbl.innerHTML = "<tr><th>יום</th><th>משמרת</th><th>עדיפות</th></tr>";
@@ -147,20 +132,18 @@ function initTable(){
 
 // שמירה אוטומטית
 function enableAutoSave() {
-  document.querySelectorAll("#requestTable select").forEach(sel=>{
-    sel.addEventListener("change", saveRequest);
-  });
+  document.querySelectorAll("#requestTable select").forEach(sel=> sel.addEventListener("change", saveRequest));
   qs("#notes").addEventListener("input", saveRequest);
 }
 
-// מלא טבלה עם נתונים
+// מילוי טבלה
 function populateTableFromData(data){
   const rows = qs("#requestTable").querySelectorAll("tr");
   let idx=0;
   rows.forEach((row,i)=>{
     if(i===0) return;
-    const day=days[Math.floor(idx/2)];
-    const shift=shifts[idx%2];
+    const day = days[Math.floor(idx/2)];
+    const shift = shifts[idx%2];
     const pr = data?.[day]?.[shift]?.priority ?? 0;
     row.cells[2].querySelector("select").value = pr;
     idx++;
@@ -219,32 +202,34 @@ onValue(ref(db,"requests"),snapshot=>{
 async function generateSchedule(){
   if(!localCache || Object.keys(localCache).length===0) await initialLoadAll();
   const requestsAll = localCache||{};
-  const schedule = {}; const carUsageCount={};
+  const schedule = {};
 
   for(const d of days){
     schedule[d]={};
     for(const sh of shifts){
       schedule[d][sh]={"טויוטה":null,"מאזדה 6":null,"מאזדה 2":null,"אוטובוס":[]};
       const assigned={};
+
+      // טויוטה -> תמיד יצחק
       schedule[d][sh]["טויוטה"]="יצחק"; assigned["יצחק"]=true;
 
-      ["מאזדה 6","מאזדה 2"].forEach(car=>{
-        const candidates=[];
-        for(const person in requestsAll){
-          const pr=requestsAll[person]?.[d]?.[sh]?.priority ??0;
-          if(pr>0 && !assigned[person] && (carPermissions[car]||[]).includes(person)){
-            candidates.push({name:person,pr});
-          }
-        }
-        if(candidates.length===0) return;
-        candidates.sort((a,b)=> b.pr!==a.pr? b.pr-a.pr: (carUsageCount[a.name]||0)-(carUsageCount[b.name]||0));
-        const chosen=candidates[0].name;
-        schedule[d][sh][car]=chosen; assigned[chosen]=true;
-        carUsageCount[chosen]=(carUsageCount[chosen]||0)+1;
-      });
+      // בדיקת צרכים
+      const momPriority = requestsAll["אמא"]?.[d]?.[sh]?.priority ??0;
+      const shaniPriority = requestsAll["שני"]?.[d]?.[sh]?.priority ??0;
+      const itiPriority = requestsAll["איתי"]?.[d]?.[sh]?.priority ??0;
 
+      // אמא במאזדה 2 אם צריכה
+      if(momPriority>0){ schedule[d][sh]["מאזדה 2"]="אמא"; assigned["אמא"]=true; }
+
+      // שני במאזדה 6 אם צריכה
+      if(shaniPriority>0){ schedule[d][sh]["מאזדה 6"]="שני"; assigned["שני"]=true; }
+
+      // איתי במאזדה 2 אם צריך ואמא לא
+      if(itiPriority>0 && !assigned["אמא"]){ schedule[d][sh]["מאזדה 2"]="איתי"; assigned["איתי"]=true; }
+
+      // שאר המשתמשים והאוטובוס
       for(const person in requestsAll){
-        const pr=requestsAll[person]?.[d]?.[sh]?.priority ??0;
+        const pr = requestsAll[person]?.[d]?.[sh]?.priority ??0;
         if(pr>0 && !assigned[person] && busAllowed.includes(person)){
           schedule[d][sh]["אוטובוס"].push(person); assigned[person]=true;
         }
@@ -252,6 +237,7 @@ async function generateSchedule(){
     }
   }
 
+  // הצגת מערכת
   let html="<div class='table-wrapper'><table>";
   html+="<tr><th>יום</th><th>משמרת</th><th>טויוטה</th><th>מאזדה 6</th><th>מאזדה 2</th><th>אוטובוס</th></tr>";
   for(const d of days){
@@ -307,7 +293,6 @@ function updateAdminAccess(){
 
 window.saveRequest=saveRequest;
 window.resetAllRequests=resetAllRequests;
-
 window.goToSchedule=async function(){ await generateSchedule(); hide("#editPage"); show("#schedulePage"); };
 window.backToEdit=function(){ hide("#schedulePage"); show("#editPage"); };
 
