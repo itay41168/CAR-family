@@ -55,7 +55,6 @@ th { background:#fafafa; font-weight:700; }
     <textarea id="notes" rows="4" placeholder="למשל: צריך הסעה ביום ראשון בבוקר"></textarea>
 
     <div style="text-align:center; margin-top:12px;">
-      <button id="saveBtn" class="secondary" onclick="saveRequest()">שמור</button>
       <button id="resetBtn" class="danger" onclick="resetAllRequests()">אפס הכל (מנהל)</button>
       <button id="generateBtn" onclick="goToSchedule()">צור מערכת (מנהל)</button>
       <button onclick="logout()">התנתק</button>
@@ -198,40 +197,76 @@ onValue(ref(db,"requests"),snapshot=>{
   }
 });
 
-// יצירת מערכת חכמה
-async function generateSchedule(){
-  if(!localCache || Object.keys(localCache).length===0) await initialLoadAll();
-  const requestsAll = localCache||{};
+async function generateSchedule() {
+  if (!localCache || Object.keys(localCache).length === 0) await initialLoadAll();
+  const requestsAll = localCache || {};
   const schedule = {};
 
-  for(const d of days){
-    schedule[d]={};
-    for(const sh of shifts){
-      schedule[d][sh]={"טויוטה":null,"מאזדה 6":null,"מאזדה 2":null,"אוטובוס":[]};
-      const assigned={};
+  for (const d of days) {
+    schedule[d] = {};
+    for (const sh of shifts) {
+      schedule[d][sh] = { "טויוטה": null, "מאזדה 6": null, "מאזדה 2": null, "אוטובוס": [] };
+      const assigned = {};
 
       // טויוטה -> תמיד יצחק
-      schedule[d][sh]["טויוטה"]="יצחק"; assigned["יצחק"]=true;
+      schedule[d][sh]["טויוטה"] = "יצחק";
+      assigned["יצחק"] = true;
 
-      // בדיקת צרכים
-      const momPriority = requestsAll["אמא"]?.[d]?.[sh]?.priority ??0;
-      const shaniPriority = requestsAll["שני"]?.[d]?.[sh]?.priority ??0;
-      const itiPriority = requestsAll["איתי"]?.[d]?.[sh]?.priority ??0;
+      // עדיפויות
+      const momPriority = requestsAll["אמא"]?.[d]?.[sh]?.priority ?? 0;
+      const shaniPriority = requestsAll["שני"]?.[d]?.[sh]?.priority ?? 0;
+      const itiPriority = requestsAll["איתי"]?.[d]?.[sh]?.priority ?? 0;
 
       // אמא במאזדה 2 אם צריכה
-      if(momPriority>0){ schedule[d][sh]["מאזדה 2"]="אמא"; assigned["אמא"]=true; }
+      if (momPriority > 0) {
+        schedule[d][sh]["מאזדה 2"] = "אמא";
+        assigned["אמא"] = true;
+      }
 
       // שני במאזדה 6 אם צריכה
-      if(shaniPriority>0){ schedule[d][sh]["מאזדה 6"]="שני"; assigned["שני"]=true; }
+      if (shaniPriority > 0) {
+        schedule[d][sh]["מאזדה 6"] = "שני";
+        assigned["שני"] = true;
+      }
 
-      // איתי במאזדה 2 אם צריך ואמא לא
-      if(itiPriority>0 && !assigned["אמא"]){ schedule[d][sh]["מאזדה 2"]="איתי"; assigned["איתי"]=true; }
+      // איתי לפי החוקים
+      if (itiPriority > 0) {
+        if (!assigned["שני"]) {
+          // שני לא צריכה מאזדה 6 -> איתי מקבל מאזדה 6
+          schedule[d][sh]["מאזדה 6"] = "איתי";
+          assigned["איתי"] = true;
+        } else {
+          // שני צריכה מאזדה 6 -> בודקים את אמא
+          if (!assigned["אמא"]) {
+            // אמא לא צריכה מאזדה 2 -> איתי מקבל מאזדה 2
+            schedule[d][sh]["מאזדה 2"] = "איתי";
+            assigned["איתי"] = true;
+          } else {
+            // אמא כן צריכה מאזדה 2
+            if (itiPriority === 2 && shaniPriority < 2) {
+              // עדיפות גבוהה, איתי מקבל מאזדה 6 למרות ששלי צריכה
+              schedule[d][sh]["מאזדה 6"] = "איתי";
+              assigned["איתי"] = true;
+            } else {
+              // אחרת, נוסע באוטובוס
+              schedule[d][sh]["אוטובוס"].push("איתי");
+              assigned["איתי"] = true;
+            }
+          }
+        }
+      }
 
       // שאר המשתמשים והאוטובוס
-      for(const person in requestsAll){
-        const pr = requestsAll[person]?.[d]?.[sh]?.priority ??0;
-        if(pr>0 && !assigned[person] && busAllowed.includes(person)){
-          schedule[d][sh]["אוטובוס"].push(person); assigned[person]=true;
+      for (const person in requestsAll) {
+        const pr = requestsAll[person]?.[d]?.[sh]?.priority ?? 0;
+        if (pr > 0) {
+          const hasCar =
+            schedule[d][sh]["טויוטה"] === person ||
+            schedule[d][sh]["מאזדה 6"] === person ||
+            schedule[d][sh]["מאזדה 2"] === person;
+          if (!hasCar && busAllowed.includes(person) && !schedule[d][sh]["אוטובוס"].includes(person)) {
+            schedule[d][sh]["אוטובוס"].push(person);
+          }
         }
       }
     }
