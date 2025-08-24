@@ -1,294 +1,317 @@
 <!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
-<meta charset="UTF-8">
-<title>סידור רכבים משפחתי</title>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>סידור רכבים משפחתי - Firebase</title>
 <style>
-/* עיצוב בסיסי */
-body { font-family: Arial, sans-serif; background:#f0f2f5; margin:0; padding:0; font-size: 1em; }
+/* בסיס ועיצוב */
+body { font-family: Arial, sans-serif; background:#f0f2f5; margin:0; padding:18px; color:#111; }
 h1,h2,h3 { text-align:center; margin:10px 0; }
-.container { max-width: 1000px; margin:auto; padding:20px; }
-.card { background:#fff; padding:20px; border-radius:10px; box-shadow:0 4px 8px rgba(0,0,0,0.1); margin-bottom:20px; }
-button { padding:12px 25px; margin:10px; border:none; border-radius:6px; background:#4CAF50; color:white; cursor:pointer; font-size:1.1em; }
-button:hover { background:#45a049; }
-table { border-collapse: collapse; width:100%; margin:15px 0; table-layout: fixed; word-wrap: break-word; }
-th,td { border:1px solid #ccc; padding:8px; text-align:center; font-size:1em; }
-th { background:#eee; }
-textarea { width:100%; box-sizing:border-box; margin-top:10px; padding:10px; border-radius:6px; border:1px solid #ccc; resize:none; font-size:1em; }
-input { padding:10px; border-radius:6px; border:1px solid #ccc; width:100%; max-width:250px; font-size:1em; }
-.hidden { display:none; }
-
-/* גלילה אופקית לטבלאות */
+.container { max-width:1000px; margin:auto; padding:18px; }
+.card { background:#fff; padding:18px; border-radius:10px; box-shadow:0 4px 12px rgba(0,0,0,0.08); margin-bottom:18px; }
+button { padding:12px 24px; margin:8px; border:none; border-radius:8px; background:#2f7d32; color:white; cursor:pointer; font-size:1em; }
+button.secondary { background:#1976d2; }
+button.danger { background:#c62828; }
+button:disabled { opacity:0.6; cursor:not-allowed; }
+input, select, textarea { padding:10px; border-radius:8px; border:1px solid #ccd; font-size:1em; }
+input, textarea { width:100%; max-width:420px; box-sizing:border-box; }
+label { display:inline-block; margin:8px 0; font-weight:600; }
+table { border-collapse:collapse; width:100%; margin:14px 0; table-layout:fixed; word-wrap:break-word; background:#fff; }
+th, td { border:1px solid #e6e6e6; padding:10px; text-align:center; font-size:1em; }
+th { background:#fafafa; font-weight:700; }
+.hidden { display:none !important; }
 .table-wrapper { overflow-x:auto; }
 
-/* רספונסיביות מתקדמת */
-@media screen and (max-width: 768px) {
-  body { font-size: 1.2em; }
-  table, th, td { font-size: 1.1em; }
-  button { padding:14px 28px; font-size:1.2em; margin:5px; }
-  textarea { font-size:1.1em; }
-  input { font-size:1.1em; max-width:100%; }
-  h1,h2,h3 { font-size:1.3em; }
+/* רספונסיביות */
+@media (max-width:768px) {
+  body { font-size:1.15em; }
+  button { padding:14px 26px; margin:6px; font-size:1.05em; }
+  input, textarea { font-size:1.05em; }
+  th,td { font-size:1.05em; padding:10px; }
 }
-
-@media screen and (max-width: 480px) {
-  body { font-size: 1.3em; }
-  table, th, td { font-size: 1.2em; }
-  button { padding:16px 30px; font-size:1.3em; margin:3px; }
-  textarea { font-size:1.2em; }
-  input { font-size:1.2em; width:100%; }
-  .container { padding:15px; }
-  h1,h2,h3 { font-size:1.4em; }
+@media (max-width:480px) {
+  body { font-size:1.25em; }
+  button { padding:16px 30px; font-size:1.15em; margin:6px 4px; }
+  input, textarea { font-size:1.15em; }
+  h1,h2,h3 { font-size:1.35em; }
 }
+.note { color:#666; font-size:0.95em; margin-top:8px; }
 </style>
 </head>
 <body>
-
 <div class="container">
+  <h1>סידור רכבים משפחתי</h1>
 
-<h1>סידור רכבים משפחתי</h1>
+  <!-- דף 1: כניסה -->
+  <div id="loginPage" class="card">
+    <h2>כניסה</h2>
+    <label for="loginId">תעודת זהות (ID):</label>
+    <input id="loginId" type="text" placeholder="למשל: 001 או 207933169" />
+    <div style="margin-top:12px;">
+      <button onclick="login()">התחבר</button>
+    </div>
+    <p class="note">דוגמה IDs/משתמשים מובנים במערכת — ערוך בקובץ בקוד</p>
+  </div>
 
-<!-- עמוד התחברות -->
-<div id="loginPage" class="card">
-<h2>כניסה למערכת</h2>
-<label>תעודת זהות:</label>
-<input type="text" id="loginId" placeholder="הכנס תעודת זהות">
-<br><br>
-<button onclick="login()">התחבר</button>
+  <!-- דף 2: עריכה -->
+  <div id="editPage" class="card hidden">
+    <h2>עריכת משמרות והעדפות</h2>
+    <div id="userNameDisplay" style="font-weight:700; margin-bottom:8px;"></div>
+
+    <div class="table-wrapper">
+      <table id="requestTable">
+        <tr><th>יום</th><th>משמרת</th><th>עדיפות</th></tr>
+      </table>
+    </div>
+
+    <label for="notes">הערות / בקשות הסעה:</label>
+    <textarea id="notes" rows="4" placeholder="למשל: צריך הסעה ביום ראשון בבוקר"></textarea>
+
+    <div style="text-align:center; margin-top:12px;">
+      <button id="saveBtn" class="secondary" onclick="saveRequest()">שמור</button>
+      <button id="resetBtn" class="danger" onclick="resetAllRequests()">אפס הכל (מנהל)</button>
+      <button id="generateBtn" onclick="goToSchedule()">צור מערכת (מנהל)</button>
+      <button onclick="logout()">התנתק</button>
+    </div>
+    <p class="note">השינויים נשמרים בענן ומופיעים אוטומטית אצל כל המכשירים.</p>
+  </div>
+
+  <!-- דף 3: מערכת -->
+  <div id="schedulePage" class="card hidden">
+    <h2>מערכת שבועית</h2>
+    <div id="scheduleResult"></div>
+    <div style="text-align:center; margin-top:12px;">
+      <button onclick="backToEdit()">חזור לעריכה</button>
+      <button onclick="logout()">התנתק</button>
+    </div>
+  </div>
 </div>
 
-<!-- עמוד עריכת משמרות -->
-<div id="editPage" class="card hidden">
-<h2>עריכת משמרות והעדפות</h2>
-<div id="userNameDisplay"></div>
-<div class="table-wrapper">
-<table id="requestTable">
-<tr>
-<th>יום</th>
-<th>משמרת</th>
-<th>עדיפות</th>
-</tr>
-</table>
-</div>
+<!-- Firebase -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getDatabase, ref, set, get, update, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
-<label>הערות / בקשות הסעה:</label>
-<textarea id="notes" rows="4" placeholder="לכתוב כאן לדוגמה: שני צריך הסעה ביום ראשון בבוקר"></textarea>
+// 🔹 הדבק כאן את Firebase config שלך
+const firebaseConfig = {
+  apiKey: "AIzaSyC9PTX8tvzhUf1BXW5ZeNbeKJcSF91sNjU",
+  authDomain: "family-cars-scheduler.firebaseapp.com",
+  databaseURL: "https://family-cars-scheduler-default-rtdb.firebaseio.com",
+  projectId: "family-cars-scheduler",
+  storageBucket: "family-cars-scheduler.firebasestorage.app",
+  messagingSenderId: "646138637773",
+  appId: "1:646138637773:web:12932dc39f54c0b803e884"
+};
 
-<div style="text-align:center;">
-<button id="saveBtn" onclick="saveRequest()">שמור בחירות</button>
-<button id="resetBtn" onclick="resetRequests()">אפס הכל</button>
-<button id="generateBtn" onclick="goToPage3()">צור מערכת</button>
-<button onclick="logout()">התנתק</button>
-</div>
-</div>
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
 
-<!-- עמוד מערכת שבועית -->
-<div id="schedulePage" class="card hidden">
-<h2>מערכת שבועית</h2>
-<div id="scheduleResult"></div>
-<button onclick="backToEdit()">חזור לעריכה</button>
-<button onclick="logout()">התנתק</button>
-</div>
-
-</div>
-
-<script>
+// הגדרות בסיסיות
 const days = ["ראשון","שני","שלישי","רביעי","חמישי","שישי","שבת"];
 const shifts = ["08-16","16-00"];
-const requests = {};
-let currentUser = null;
-
-// --- משתמשים ותעודות זהות ---
-const users = {
-  "001": "איתי",
-  "002": "אושירה",
-  "003": "יצחק",
-  "004": "שני",
-  "005": "אורי"
-};
-
-// --- רכב והגבלות ---
-const carPermissions = {
-  "טויוטה": ["יצחק"],
-  "מאזדה 6": ["שני","איתי","אורי"],
-  "מאזדה 2": ["אושירה","איתי"]
-};
+const usersById = { "001":"איתי", "002":"אמא", "003":"שני", "004":"יצחק", "005":"אורי" };
+const carPermissions = { "טויוטה":["יצחק"], "מאזדה 6":["שני","איתי","אורי"], "מאזדה 2":["אמא","איתי"] };
 const busAllowed = ["שני","איתי"];
+const admins = ["איתי"];
 
-// --- התחברות ---
-function login(){
-  const id = document.getElementById("loginId").value.trim();
-  if(users[id]){
-    currentUser = users[id];
-    document.getElementById("loginPage").classList.add("hidden");
-    document.getElementById("editPage").classList.remove("hidden");
-    document.getElementById("userNameDisplay").innerText = "שלום, " + currentUser;
-    initTable();
-    loadRequest(currentUser);
-    updateAdminAccess();
-  } else {
-    alert("תעודת זהות לא מוכרת. נסה שוב.");
-  }
-}
+let currentUser = null;
+let currentUserId = null;
+let localCache = {};
 
-// --- יציאה ---
-function logout(){
-  currentUser = null;
-  document.getElementById("loginPage").classList.remove("hidden");
-  document.getElementById("editPage").classList.add("hidden");
-  document.getElementById("schedulePage").classList.add("hidden");
-  document.getElementById("requestTable").innerHTML = "<tr><th>יום</th><th>משמרת</th><th>עדיפות</th></tr>";
-  document.getElementById("notes").value = "";
-}
+// כלים
+const qs = s => document.querySelector(s);
+const show = s => qs(s).classList.remove("hidden");
+const hide = s => qs(s).classList.add("hidden");
 
-// --- טבלת משמרות ---
-function initTable() {
-  const tbl = document.getElementById("requestTable");
+// בונה טבלה ומשמרות
+function initTable(){
+  const tbl = qs("#requestTable");
   tbl.innerHTML = "<tr><th>יום</th><th>משמרת</th><th>עדיפות</th></tr>";
-  for(let day of days){
-    for(let shift of shifts){
-      let row = document.createElement("tr");
-      row.innerHTML = `<td>${day}</td><td>${shift}</td>
-      <td><select>
-      <option value="0">0 - לא צריך רכב</option>
-      <option value="1">1 - רכב לבילוי</option>
-      <option value="2">2 - עבודה/לימודים</option>
-      </select></td>`;
-      tbl.appendChild(row);
+  for(const day of days){
+    for(const shift of shifts){
+      const tr = document.createElement("tr");
+      tr.innerHTML = `<td>${day}</td><td>${shift}</td>
+        <td>
+          <select>
+            <option value="0">0 - לא צריך רכב</option>
+            <option value="1">1 - רכב לבילוי</option>
+            <option value="2">2 - עבודה/לימודים</option>
+          </select>
+        </td>`;
+      tbl.appendChild(tr);
     }
   }
+  enableAutoSave();
 }
 
-function saveRequest(){
-  if(!currentUser) return;
-  const rows=document.querySelectorAll("#requestTable tr");
-  requests[currentUser]={};
-  let rowIdx=0;
-  rows.forEach((row,idx)=>{
-    if(idx===0) return;
-    const day=days[Math.floor(rowIdx/2)];
-    const shift=shifts[rowIdx%2];
-    const priority=row.cells[2].querySelector("select").value;
-    if(!requests[currentUser][day]) requests[currentUser][day]={};
-    requests[currentUser][day][shift]={priority:parseInt(priority)};
-    rowIdx++;
+// שמירה אוטומטית
+function enableAutoSave() {
+  document.querySelectorAll("#requestTable select").forEach(sel=>{
+    sel.addEventListener("change", saveRequest);
   });
-  requests[currentUser].notes=document.getElementById("notes").value;
-  alert("הבחירות נשמרו!");
+  qs("#notes").addEventListener("input", saveRequest);
 }
 
-function loadRequest(name){
-  const rows=document.querySelectorAll("#requestTable tr");
-  let rowIdx=0;
-  rows.forEach((row,idx)=>{
-    if(idx===0) return;
-    const day=days[Math.floor(rowIdx/2)];
-    const shift=shifts[rowIdx%2];
-    let data=(requests[name] && requests[name][day] && requests[name][day][shift])?requests[name][day][shift]:{priority:0};
-    row.cells[2].querySelector("select").value=data.priority;
-    rowIdx++;
+// מלא טבלה עם נתונים
+function populateTableFromData(data){
+  const rows = qs("#requestTable").querySelectorAll("tr");
+  let idx=0;
+  rows.forEach((row,i)=>{
+    if(i===0) return;
+    const day=days[Math.floor(idx/2)];
+    const shift=shifts[idx%2];
+    const pr = data?.[day]?.[shift]?.priority ?? 0;
+    row.cells[2].querySelector("select").value = pr;
+    idx++;
   });
-  document.getElementById("notes").value=(requests[name] && requests[name].notes)?requests[name].notes:"";
+  qs("#notes").value = data?.notes ?? "";
 }
 
-// --- הרשאות מנהל ---
-function updateAdminAccess() {
-  document.getElementById("resetBtn").style.display = (currentUser==="איתי")?"inline-block":"none";
-  document.getElementById("generateBtn").style.display = (currentUser==="איתי")?"inline-block":"none";
+// שמירה ל-Firebase
+async function saveRequest(){
+  if(!currentUser) return alert("אין משתמש פעיל");
+  const rows = qs("#requestTable").querySelectorAll("tr");
+  const payload = {};
+  let idx=0;
+  rows.forEach((row,i)=>{
+    if(i===0) return;
+    const day=days[Math.floor(idx/2)];
+    const shift=shifts[idx%2];
+    const priority=parseInt(row.cells[2].querySelector("select").value,10);
+    if(!payload[day]) payload[day]={};
+    payload[day][shift]={priority};
+    idx++;
+  });
+  payload.notes = qs("#notes").value || "";
+  payload.updatedAt = Date.now();
+  await set(ref(db,"requests/"+currentUser),payload);
 }
 
-// --- איפוס ---
-function resetRequests(){
-  if(!currentUser) return;
-  const rows=document.querySelectorAll("#requestTable tr");
-  rows.forEach((row,idx)=>{if(idx===0) return; row.cells[2].querySelector("select").value=0;});
-  document.getElementById("notes").value="";
-  requests[currentUser]={};
-  days.forEach(day=>{requests[currentUser][day]={};shifts.forEach(shift=>{requests[currentUser][day][shift]={priority:0};});});
-  requests[currentUser].notes="";
-  alert("כל המשמרות והערות אופסו!");
+// איפוס מנהל
+async function resetAllRequests(){
+  if(!admins.includes(currentUser)) return alert("רק מנהל יכול לאפס");
+  if(!confirm("להמשיך ולאפס את כל הבחירות של כולם?")) return;
+  const zeros = {};
+  for(const d of days){ zeros[d]={}; for(const s of shifts){ zeros[d][s]={priority:0}; } }
+  zeros.notes=""; zeros.updatedAt=Date.now();
+  const updates={};
+  Object.values(usersById).forEach(name=>{ updates['requests/'+name]=zeros; });
+  await update(ref(db),updates);
+  alert("כל הבחירות אופסו בענן");
 }
 
-// --- ניווט בין עמודים ---
-function goToPage3(){
-  generateSchedule();
-  document.getElementById("editPage").classList.add("hidden");
-  document.getElementById("schedulePage").classList.remove("hidden");
+// טעינה ראשונית
+async function initialLoadAll(){
+  const snap = await get(ref(db,"requests"));
+  localCache = snap.exists()?snap.val():{};
 }
 
-function backToEdit(){
-  document.getElementById("editPage").classList.remove("hidden");
-  document.getElementById("schedulePage").classList.add("hidden");
-}
+// מאזין בזמן אמת
+onValue(ref(db,"requests"),snapshot=>{
+  localCache = snapshot.exists()?snapshot.val():{};
+  if(currentUser && !qs("#editPage").classList.contains("hidden")){
+    populateTableFromData(localCache[currentUser]||null);
+  }
+});
 
-// --- יצירת מערכת חכמה ---
-function generateSchedule(){
-  let schedule={};
-  let carUsageCount={};
+// יצירת מערכת חכמה
+async function generateSchedule(){
+  if(!localCache || Object.keys(localCache).length===0) await initialLoadAll();
+  const requestsAll = localCache||{};
+  const schedule = {}; const carUsageCount={};
 
-  for(let d of days){
+  for(const d of days){
     schedule[d]={};
-    for(let sh of shifts){
+    for(const sh of shifts){
       schedule[d][sh]={"טויוטה":null,"מאזדה 6":null,"מאזדה 2":null,"אוטובוס":[]};
-      let assigned={};
-      schedule[d][sh]["טויוטה"]="יצחק";
-      assigned["יצחק"]=true;
+      const assigned={};
+      schedule[d][sh]["טויוטה"]="יצחק"; assigned["יצחק"]=true;
 
       ["מאזדה 6","מאזדה 2"].forEach(car=>{
-        let candidates=[];
-        for(let person in requests){
-          if(requests[person][d] && requests[person][d][sh].priority>0 && !assigned[person]){
-            if(carPermissions[car].includes(person)) candidates.push({name:person,pr:requests[person][d][sh].priority});
+        const candidates=[];
+        for(const person in requestsAll){
+          const pr=requestsAll[person]?.[d]?.[sh]?.priority ??0;
+          if(pr>0 && !assigned[person] && (carPermissions[car]||[]).includes(person)){
+            candidates.push({name:person,pr});
           }
         }
         if(candidates.length===0) return;
-        candidates.sort((a,b)=>{
-          if(b.pr!==a.pr) return b.pr - a.pr;
-          return (carUsageCount[a.name]||0)-(carUsageCount[b.name]||0);
-        });
-        let chosen=candidates[0].name;
-        schedule[d][sh][car]=chosen;
-        assigned[chosen]=true;
+        candidates.sort((a,b)=> b.pr!==a.pr? b.pr-a.pr: (carUsageCount[a.name]||0)-(carUsageCount[b.name]||0));
+        const chosen=candidates[0].name;
+        schedule[d][sh][car]=chosen; assigned[chosen]=true;
         carUsageCount[chosen]=(carUsageCount[chosen]||0)+1;
       });
 
-      for(let person in requests){
-        if(requests[person][d] && requests[person][d][sh].priority>0 && !assigned[person] && busAllowed.includes(person)){
-          schedule[d][sh]["אוטובוס"].push(person);
-          assigned[person]=true;
+      for(const person in requestsAll){
+        const pr=requestsAll[person]?.[d]?.[sh]?.priority ??0;
+        if(pr>0 && !assigned[person] && busAllowed.includes(person)){
+          schedule[d][sh]["אוטובוס"].push(person); assigned[person]=true;
         }
       }
     }
   }
 
-  let html="<h3>מערכת שבועית</h3>";
-  html+="<div class='table-wrapper'><table><tr><th>יום</th><th>משמרת</th><th>טויוטה</th><th>מאזדה 6</th><th>מאזדה 2</th><th>אוטובוס</th></tr>";
-  for(let d of days){
-    for(let sh of shifts){
-      html+=`<tr>
-      <td>${d}</td>
-      <td>${sh}</td>
-      <td>${schedule[d][sh]["טויוטה"]||""}</td>
-      <td>${schedule[d][sh]["מאזדה 6"]||""}</td>
-      <td>${schedule[d][sh]["מאזדה 2"]||""}</td>
-      <td>${schedule[d][sh]["אוטובוס"].join(", ")}</td>
+  let html="<div class='table-wrapper'><table>";
+  html+="<tr><th>יום</th><th>משמרת</th><th>טויוטה</th><th>מאזדה 6</th><th>מאזדה 2</th><th>אוטובוס</th></tr>";
+  for(const d of days){
+    for(const sh of shifts){
+      html+=`<tr><td>${d}</td><td>${sh}</td>
+        <td>${schedule[d][sh]["טויוטה"]||""}</td>
+        <td>${schedule[d][sh]["מאזדה 6"]||""}</td>
+        <td>${schedule[d][sh]["מאזדה 2"]||""}</td>
+        <td>${(schedule[d][sh]["אוטובוס"]||[]).join(", ")}</td>
       </tr>`;
     }
   }
   html+="</table></div>";
-
-  // הצגת הערות עם כוכביות
   html+="<h3>הערות:</h3><ul>";
-  for(let person in requests){
-    if(requests[person].notes && requests[person].notes.trim()!==""){
-      html+=`<li>* ${person}: ${requests[person].notes}</li>`;
-    }
+  for(const person in requestsAll){
+    const note=(requestsAll[person]?.notes||"").trim();
+    if(note) html+=`<li>* ${person}: ${note}</li>`;
   }
   html+="</ul>";
-
-  document.getElementById("scheduleResult").innerHTML=html;
+  qs("#scheduleResult").innerHTML=html;
 }
-</script>
 
+// זרימת מסכים
+window.login=async function(){
+  const id=qs("#loginId").value.trim();
+  if(!id) return alert("הכנס ID");
+  if(!usersById[id]) return alert("ID לא מוכר");
+  currentUserId=id; currentUser=usersById[id];
+
+  hide("#loginPage"); show("#editPage");
+  qs("#userNameDisplay").innerText="שלום, "+currentUser;
+
+  initTable();
+  const snap=await get(ref(db,"requests/"+currentUser));
+  const data = snap.exists()?snap.val():null;
+  if(data) localCache[currentUser]=data;
+  populateTableFromData(data);
+  updateAdminAccess();
+};
+
+window.logout=function(){
+  currentUser=null; currentUserId=null;
+  show("#loginPage"); hide("#editPage"); hide("#schedulePage");
+  qs("#requestTable").innerHTML="<tr><th>יום</th><th>משמרת</th><th>עדיפות</th></tr>";
+  qs("#notes").value="";
+};
+
+function updateAdminAccess(){
+  const isAdmin = admins.includes(currentUser);
+  qs("#resetBtn").style.display = isAdmin?"inline-block":"none";
+  qs("#generateBtn").style.display = isAdmin?"inline-block":"none";
+}
+
+window.saveRequest=saveRequest;
+window.resetAllRequests=resetAllRequests;
+
+window.goToSchedule=async function(){ await generateSchedule(); hide("#editPage"); show("#schedulePage"); };
+window.backToEdit=function(){ hide("#schedulePage"); show("#editPage"); };
+
+initialLoadAll().catch(()=>{});
+</script>
 </body>
 </html>
