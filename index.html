@@ -93,7 +93,7 @@ const db = getDatabase(app);
 
 // הגדרות בסיסיות
 const days = ["ראשון","שני","שלישי","רביעי","חמישי","שישי","שבת"];
-const shifts = ["08-16","16-00"];
+const shifts = ["08-14","14-22"];
 const usersById = { "001":"איתי", "002":"אמא", "003":"שני", "004":"יצחק", "005":"אורי" };
 const carPermissions = { "טויוטה":["יצחק"], "מאזדה 2 לבן":["שני","איתי"], "מאזדה 2 כחול":["אמא","איתי","אורי"] };
 const busAllowed = ["שני","איתי"];
@@ -205,7 +205,7 @@ async function generateSchedule() {
   for (const d of days) {
     schedule[d] = {};
     for (const sh of shifts) {
-      schedule[d][sh] = { "טויוטה": null, "מאזדה 6": null, "מאזדה 2": null, "אוטובוס": [] };
+      schedule[d][sh] = { "טויוטה": null, "מאזדה 2 כחול": null, "מאזדה 2 לבן": null, "אוטובוס": [] };
       const assigned = {};
 
       // טויוטה -> תמיד יצחק
@@ -219,13 +219,13 @@ async function generateSchedule() {
 
       // אמא במאזדה 2 אם צריכה
       if (momPriority > 0) {
-        schedule[d][sh]["מאזדה 2"] = "אמא";
+        schedule[d][sh]["מאזדה 2 כחול"] = "אמא";
         assigned["אמא"] = true;
       }
 
       // שני במאזדה 6 אם צריכה
       if (shaniPriority > 0) {
-        schedule[d][sh]["מאזדה 6"] = "שני";
+        schedule[d][sh]["מאזדה 2 לבן"] = "שני";
         assigned["שני"] = true;
       }
 
@@ -233,19 +233,19 @@ async function generateSchedule() {
       if (itiPriority > 0) {
         if (!assigned["שני"]) {
           // שני לא צריכה מאזדה 6 -> איתי מקבל מאזדה 6
-          schedule[d][sh]["מאזדה 6"] = "איתי";
+          schedule[d][sh]["מאזדה 2 לבן"] = "איתי";
           assigned["איתי"] = true;
         } else {
           // שני צריכה מאזדה 6 -> בודקים את אמא
           if (!assigned["אמא"]) {
             // אמא לא צריכה מאזדה 2 -> איתי מקבל מאזדה 2
-            schedule[d][sh]["מאזדה 2"] = "איתי";
+            schedule[d][sh]["מאזדה 2 כחול"] = "איתי";
             assigned["איתי"] = true;
           } else {
             // אמא כן צריכה מאזדה 2
             if (itiPriority === 2 && shaniPriority < 2) {
               // עדיפות גבוהה, איתי מקבל מאזדה 6 למרות ששלי צריכה
-              schedule[d][sh]["מאזדה 6"] = "איתי";
+              schedule[d][sh]["מאזדה 2 לבן"] = "איתי";
               assigned["איתי"] = true;
             } else {
               // אחרת, נוסע באוטובוס
@@ -262,8 +262,8 @@ async function generateSchedule() {
         if (pr > 0) {
           const hasCar =
             schedule[d][sh]["טויוטה"] === person ||
-            schedule[d][sh]["מאזדה 6"] === person ||
-            schedule[d][sh]["מאזדה 2"] === person;
+            schedule[d][sh]["מאזדה 2 לבן"] === person ||
+            schedule[d][sh]["מאזדה 2 כחול"] === person;
           if (!hasCar && busAllowed.includes(person) && !schedule[d][sh]["אוטובוס"].includes(person)) {
             schedule[d][sh]["אוטובוס"].push(person);
           }
@@ -279,8 +279,8 @@ async function generateSchedule() {
     for(const sh of shifts){
       html+=`<tr><td>${d}</td><td>${sh}</td>
         <td>${schedule[d][sh]["טויוטה"]||""}</td>
-        <td>${schedule[d][sh]["מאזדה 6"]||""}</td>
-        <td>${schedule[d][sh]["מאזדה 2"]||""}</td>
+        <td>${schedule[d][sh]["מאזדה 2 לבן"]||""}</td>
+        <td>${schedule[d][sh]["מאזדה 2 כחול"]||""}</td>
         <td>${(schedule[d][sh]["אוטובוס"]||[]).join(", ")}</td>
       </tr>`;
     }
@@ -335,4 +335,5 @@ initialLoadAll().catch(()=>{});
 </script>
 </body>
 </html>
+
 
