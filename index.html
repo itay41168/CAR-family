@@ -1,417 +1,268 @@
 <!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
-    <meta charset="UTF-8">
-    <title>מערכת לוז רכבים משפחתית</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8">
+<title>מערכת לוז רכבים משפחתית</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <!-- Flatpickr CSS -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<!-- Flatpickr -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 
-    <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #4facfe, #00f2fe);
-            min-height: 100vh;
-            margin: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 10px;
-        }
-
-        .dashboard {
-            background: white;
-            padding: 20px;
-            border-radius: 16px;
-            width: 100%;
-            max-width: 1000px;
-            margin: 20px 0;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
-            overflow-x: auto;
-        }
-
-        .form {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-            margin-bottom: 20px;
-        }
-
-        .form input,
-        .form select {
-            padding: 10px;
-            font-size: 14px;
-            border-radius: 8px;
-            border: 1px solid #ccc;
-            flex: 1 1 100px;
-        }
-
-        .form button {
-            background: #4facfe;
-            color: white;
-            border: none;
-            padding: 10px 14px;
-            cursor: pointer;
-            border-radius: 8px;
-            font-size: 14px;
-            flex: 1 1 80px;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 20px;
-            font-size: 14px;
-        }
-
-        th, td {
-            border: 1px solid #ddd;
-            padding: 10px;
-            text-align: center;
-        }
-
-        th {
-            background: #f0f0f0;
-            font-weight: 600;
-        }
-
-        .save {
-            width: 100%;
-            padding: 12px;
-            font-size: 16px;
-            background: #00c853;
-            color: white;
-            border: none;
-            border-radius: 10px;
-            cursor: pointer;
-            margin-bottom: 10px;
-        }
-
-        .admin {
-            width: 100%;
-            padding: 12px;
-            font-size: 16px;
-            background: #ff9800;
-            color: white;
-            border: none;
-            border-radius: 10px;
-            cursor: pointer;
-            margin-bottom: 10px;
-        }
-
-        #weeklySystem {
-            margin-top: 20px;
-            overflow-x: auto;
-        }
-
-        .system-table {
-            border-collapse: collapse;
-            width: 100%;
-            max-width: 1000px;
-            font-size: 14px;
-        }
-
-        .system-table th,
-        .system-table td {
-            border: 1px solid #333;
-            padding: 10px;
-            min-width: 100px;
-            text-align: center;
-            white-space: nowrap;
-        }
-
-        .system-table th {
-            background: #bbdefb;
-            font-weight: 700;
-            font-size: 16px;
-        }
-
-        .time-cell {
-            background: #eeeeee;
-            font-weight: bold;
-        }
-
-        .editable {
-            cursor: text;
-            background: #fafafa;
-        }
-
-        .editable.editing {
-            background: #fff9c4;
-            outline: 2px solid #ffeb3b;
-        }
-
-        /* --- רספונסיביות --- */
-        @media (max-width: 600px) {
-            .form {
-                flex-direction: column;
-            }
-
-            .form input, .form select, .form button {
-                flex: 1 1 100%;
-            }
-
-            .system-table th,
-            .system-table td {
-                min-width: 80px;
-                padding: 6px;
-                font-size: 12px;
-            }
-
-            th {
-                font-size: 12px;
-            }
-
-            table, .system-table {
-                font-size: 12px;
-            }
-
-            .save, .admin {
-                font-size: 14px;
-                padding: 10px;
-            }
-        }
-    </style>
+<style>
+body {
+    font-family: Arial, sans-serif;
+    background: linear-gradient(135deg,#4facfe,#00f2fe);
+    margin:0;
+    padding:10px;
+}
+.dashboard {
+    background:#fff;
+    border-radius:16px;
+    padding:20px;
+    max-width:1100px;
+    margin:auto;
+}
+.form {
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+}
+.form input,.form select,.form button {
+    padding:10px;
+    font-size:14px;
+}
+table {
+    width:100%;
+    border-collapse:collapse;
+    margin-top:15px;
+}
+th,td {
+    border:1px solid #ccc;
+    padding:8px;
+    text-align:center;
+}
+th { background:#f0f0f0 }
+.save,.admin {
+    width:100%;
+    padding:12px;
+    margin-top:10px;
+    font-size:16px;
+    border:none;
+    color:white;
+}
+.save { background:#00c853 }
+.admin { background:#ff9800 }
+.system-table th { background:#bbdefb }
+.time-cell { background:#eee;font-weight:bold }
+.editable { background:#fafafa; cursor:text }
+.editable.editing { outline:2px solid #ff9800 }
+</style>
 </head>
+
 <body>
-
 <div class="dashboard">
-    <h1 id="welcome"></h1>
-    <h2>הלו״ז השבועי שלי</h2>
 
-    <div class="form">
-        <select id="day">
-            <option value="">בחר יום</option>
-            <option value="ראשון">ראשון</option>
-            <option value="שני">שני</option>
-            <option value="שלישי">שלישי</option>
-            <option value="רביעי">רביעי</option>
-            <option value="חמישי">חמישי</option>
-            <option value="שישי">שישי</option>
-            <option value="שבת">שבת</option>
-        </select>
+<h2 id="welcome"></h2>
 
-        <input id="start" placeholder="התחלה">
-        <input id="end" placeholder="סיום">
-        <input type="text" id="activity" placeholder="מה הפעילות?">
+<div class="form">
+<select id="day">
+<option value="">בחר יום</option>
+<option>ראשון</option><option>שני</option><option>שלישי</option>
+<option>רביעי</option><option>חמישי</option><option>שישי</option><option>שבת</option>
+</select>
 
-        <button onclick="addActivity()">➕ הוסף</button>
-    </div>
-
-    <table>
-        <thead>
-            <tr>
-                <th>יום</th>
-                <th>התחלה</th>
-                <th>סיום</th>
-                <th>פעילות</th>
-                <th>מחיקה</th>
-            </tr>
-        </thead>
-        <tbody id="tableBody"></tbody>
-    </table>
-
-    <button class="save" onclick="saveSchedule()">💾 שמירה</button>
-    <button id="adminBtn" class="admin" onclick="generateWeeklyTableFinal()">
-        🛠 יצירת מערכת שבועית
-    </button>
-
-    <div id="weeklySystem" style="display:none;">
-        <h2>מערכת רכבים שבועית</h2>
-        <div class="table-wrapper">
-            <div id="systemTable"></div>
-        </div>
-    </div>
+<input id="start" placeholder="שעת התחלה">
+<input id="end" placeholder="שעת סיום">
+<input id="activity" placeholder="פעילות">
+<button onclick="addActivity()">➕ הוסף</button>
 </div>
 
-<!-- Firebase + Flatpickr -->
+<table>
+<thead>
+<tr>
+<th>יום</th><th>התחלה</th><th>סיום</th><th>פעילות</th><th></th>
+</tr>
+</thead>
+<tbody id="tableBody"></tbody>
+</table>
+
+<button class="save" onclick="saveSchedule()">💾 שמירת לוז אישי</button>
+<button class="admin" id="adminBtn" onclick="generateWeeklyTableFinal()">🛠 יצירת מערכת שבועית</button>
+
+<div id="weeklySystem" style="margin-top:20px">
+<div id="systemTable"></div>
+</div>
+
+</div>
+
+<!-- Flatpickr -->
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+<!-- Firebase -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getDatabase, ref, set, get } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
-import flatpickr from "https://cdn.jsdelivr.net/npm/flatpickr";
 
-const firebaseConfig = {
+/* ---------- Firebase ---------- */
+const app = initializeApp({
   apiKey: "AIzaSyC9PTX8tvzhUf1BXW5ZeNbeKJcSF91sNjU",
-  authDomain: "family-cars-scheduler.firebaseapp.com",
-  databaseURL: "https://family-cars-scheduler-default-rtdb.firebaseio.com",
-  projectId: "family-cars-scheduler",
-  storageBucket: "family-cars-scheduler.firebasestorage.app",
-  messagingSenderId: "646138637773",
-  appId: "1:646138637773:web:12932dc39f54c0b803e884"
-};
-
-const app = initializeApp(firebaseConfig);
+  databaseURL: "https://family-cars-scheduler-default-rtdb.firebaseio.com"
+});
 const db = getDatabase(app);
 
-// --- משתמש ---
+/* ---------- משתמש ---------- */
 let username = prompt("הכנס שם משתמש: אמא, איתי, שני, אורי, אבא") || "איתי";
-document.getElementById("welcome").textContent = `שלום ${username} 👋`;
-if (username !== "איתי") document.getElementById("adminBtn").style.display="none";
+welcome.textContent = `שלום ${username} 👋`;
+if(username !== "איתי") adminBtn.style.display="none";
 
-let activities = [];
-const daysOrder = ["ראשון","שני","שלישי","רביעי","חמישי","שישי","שבת"];
-const cars = ["מאזדה לבנה","מאזדה כחולה","טויוטה (אבא)","אוטובוס"];
+/* ---------- קבועים ---------- */
+const daysOrder=["ראשון","שני","שלישי","רביעי","חמישי","שישי","שבת"];
+const cars=["מאזדה לבנה","מאזדה כחולה","טויוטה (אבא)","אוטובוס"];
+let activities=[];
 
-const dayInput = v => { const el = document.getElementById("day"); if(v!==undefined) el.value=v; return el.value; };
-const startInput = v => { const el = document.getElementById("start"); if(v!==undefined) el.value=v; return el.value; };
-const endInput = v => { const el = document.getElementById("end"); if(v!==undefined) el.value=v; return el.value; };
-const activityInput = v => { const el = document.getElementById("activity"); if(v!==undefined) el.value=v; return el.value; };
+/* ---------- שעון ---------- */
+flatpickr("#start",{enableTime:true,noCalendar:true,dateFormat:"H:i"});
+flatpickr("#end",{enableTime:true,noCalendar:true,dateFormat:"H:i"});
 
-function clearForm() {
-    document.getElementById("day").value="";
-    document.getElementById("start").value="";
-    document.getElementById("end").value="";
-    document.getElementById("activity").value="";
+/* ---------- עזר ---------- */
+const toMin=t=>{const[a,b]=t.split(":").map(Number);return a*60+b};
+
+/* ---------- לוז אישי ---------- */
+function addActivity(){
+  const d=day.value,s=start.value,e=end.value,a=activity.value;
+  if(!d||!s||!e||!a) return alert("נא למלא את כל השדות");
+  if(toMin(s)>=toMin(e)) return alert("שעת התחלה חייבת להיות לפני שעת סיום");
+
+  const overlap=activities.some(x=>
+    x.day===d && !(toMin(e)<=toMin(x.start)||toMin(s)>=toMin(x.end))
+  );
+  if(overlap) return alert("❌ יש חפיפה עם פעילות קיימת");
+
+  activities.push({username,day:d,start:s,end:e,activity:a});
+  render(); clearForm();
 }
 
-// --- Flatpickr לגלגלות שעה ---
-flatpickr("#start", { enableTime: true, noCalendar: true, dateFormat: "H:i" });
-flatpickr("#end", { enableTime: true, noCalendar: true, dateFormat: "H:i" });
-
-// --- לוז אישי עם ולידציה ---
-function addActivity() {
-    const day = dayInput();
-    const start = startInput();
-    const end = endInput();
-    const activity = activityInput();
-
-    if (!day || !start || !end || !activity) {
-        alert("נא למלא את כל השדות");
-        return;
-    }
-
-    // ולידציה: התחלה < סיום
-    if (start >= end) {
-        alert("שעת ההתחלה חייבת להיות לפני שעת הסיום ⏰");
-        return;
-    }
-
-    // ולידציה: אין חפיפה עם פעילויות קיימות
-    const dayActivities = activities.filter(a => a.day === day);
-    const overlap = dayActivities.some(a => !(end <= a.start || start >= a.end));
-    if (overlap) {
-        alert("הטווח שהכנסת חופף לפעילות קיימת באותו יום ❌");
-        return;
-    }
-
-    activities.push({ username, day, start, end, activity });
-    sortActivities();
-    renderTable();
-    clearForm();
+function render(){
+  activities.sort((a,b)=>
+    daysOrder.indexOf(a.day)-daysOrder.indexOf(b.day)||
+    a.start.localeCompare(b.start)
+  );
+  tableBody.innerHTML="";
+  activities.forEach((x,i)=>{
+    tableBody.innerHTML+=`
+    <tr>
+      <td>${x.day}</td><td>${x.start}</td><td>${x.end}</td><td>${x.activity}</td>
+      <td><button onclick="deleteActivity(${i})">❌</button></td>
+    </tr>`;
+  });
 }
 
-function sortActivities() { 
-    activities.sort((a,b)=> daysOrder.indexOf(a.day)-daysOrder.indexOf(b.day)||a.start.localeCompare(b.start)); 
+function deleteActivity(i){ activities.splice(i,1); render(); }
+function clearForm(){ day.value=start.value=end.value=activity.value=""; }
+
+/* ---------- Firebase ---------- */
+function saveSchedule(){
+  set(ref(db,"schedules/"+username),activities)
+    .then(()=>alert("נשמר בהצלחה"));
 }
 
-function renderTable() {
-    const tbody = document.getElementById("tableBody"); 
-    tbody.innerHTML="";
-    activities.forEach((a,i)=>tbody.innerHTML+=`<tr>
-        <td>${a.day}</td><td>${a.start}</td><td>${a.end}</td><td>${a.activity}</td>
-        <td><button onclick="deleteActivity(${i})">❌</button></td>
-    </tr>`);
+async function loadUserSchedule(){
+  const snap=await get(ref(db,"schedules/"+username));
+  activities=snap.val()||[];
+  render();
 }
-
-function deleteActivity(i){ 
-    if(!confirm("למחוק את הפעילות?")) return; 
-    activities.splice(i,1); 
-    renderTable(); 
-}
-
-// --- Firebase ---
-function saveSchedule() {
-    set(ref(db, `schedules/${username}`), activities)
-        .then(()=>alert("הלו״ז נשמר בהצלחה ✅"))
-        .catch(()=>alert("שגיאה בשמירת הלו״ז ❌"));
-}
-
-function loadUserSchedule() {
-    get(ref(db, `schedules/${username}`)).then(snapshot=>{
-        activities = snapshot.val() || [];
-        sortActivities();
-        renderTable(); // <--- מציג את הלוז מיד
-    }).catch(err => console.error("שגיאה בטעינת הלו״ז:", err));
-}
-
-// טעינה מידית עם כניסה
 loadUserSchedule();
 
-async function loadAllSchedules() {
-    const snapshot = await get(ref(db,"schedules")); 
-    if(!snapshot.exists()) return [];
-    return Object.values(snapshot.val()).flat();
+async function loadAllSchedules(){
+  const snap=await get(ref(db,"schedules"));
+  if(!snap.exists()) return [];
+  return Object.values(snap.val()).flat();
 }
 
-function enableEditing() {
-    document.querySelectorAll(".editable").forEach(cell=>{
-        cell.addEventListener("focus",()=>cell.classList.add("editing"));
-        cell.addEventListener("blur",()=>cell.classList.remove("editing"));
+/* ---------- מערכת שבועית ---------- */
+function enableEditing(){
+  document.querySelectorAll(".editable").forEach(c=>{
+    c.addEventListener("focus",()=>c.classList.add("editing"));
+    c.addEventListener("blur",()=>c.classList.remove("editing"));
+  });
+}
+
+async function generateWeeklyTableFinal(){
+  const personalSchedules=await loadAllSchedules();
+  weeklySystem.style.display="block";
+
+  let html=`<table class="system-table"><tr><th>יום</th><th>שעות</th>`;
+  cars.forEach(c=>html+=`<th>${c}</th>`); html+=`</tr>`;
+
+  for(const day of daysOrder){
+    const requests=personalSchedules
+      .filter(r=>r.day===day)
+      .sort((a,b)=>a.start.localeCompare(b.start));
+    if(!requests.length) continue;
+
+    let intervals=[];
+    requests.forEach(r=>{
+      let added=false;
+      for(let i of intervals){
+        if(!(r.end<=i.start||r.start>=i.end)){
+          i.start=r.start<i.start?r.start:i.start;
+          i.end=r.end>i.end?r.end:i.end;
+          i.requests.push(r); added=true; break;
+        }
+      }
+      if(!added) intervals.push({start:r.start,end:r.end,requests:[r]});
     });
+
+    intervals.sort((a,b)=>a.start.localeCompare(b.start));
+
+    intervals.forEach((intv,idx)=>{
+      html+=`<tr>`;
+      if(idx===0) html+=`<td rowspan="${intervals.length}" class="time-cell">${day}</td>`;
+      html+=`<td class="time-cell">${intv.start}-${intv.end}</td>`;
+
+      const assigned={},used=new Set();
+
+      const bluePriority=["אמא","איתי","אורי"];
+      const blue=bluePriority.find(u=>intv.requests.some(r=>r.username===u)&&!used.has(u));
+      assigned["מאזדה כחולה"]=blue?[blue]:[]; if(blue) used.add(blue);
+
+      let white=null;
+      const itiBlue=used.has("איתי");
+      const shani=intv.requests.find(r=>r.username==="שני");
+      const iti=intv.requests.find(r=>r.username==="איתי");
+      if(shani){
+        if(itiBlue) white="שני";
+        else{
+          const sImp=["עבודה","לימודים"].some(x=>shani.activity.includes(x));
+          const iImp=iti?["עבודה","לימודים"].some(x=>iti.activity.includes(x)):false;
+          if(sImp||(!sImp&&!iImp)) white="שני";
+          else if(iImp) white="איתי";
+        }
+      } else if(iti) white="איתי";
+
+      assigned["מאזדה לבנה"]=white?[white]:[]; if(white) used.add(white);
+
+      if(intv.requests.some(r=>r.username==="אבא")&&!used.has("אבא")){
+        assigned["טויוטה (אבא)"]=["אבא"]; used.add("אבא");
+      } else assigned["טויוטה (אבא)"]=[];
+
+      assigned["אוטובוס"]=intv.requests.map(r=>r.username).filter(u=>!used.has(u));
+
+      cars.forEach(c=>html+=`<td class="editable" contenteditable="true">${assigned[c].join(", ")}</td>`);
+      html+=`</tr>`;
+    });
+  }
+
+  html+=`</table>`;
+  systemTable.innerHTML=html;
+  enableEditing();
 }
 
-async function generateWeeklyTableFinal() {
-    const personalSchedules = await loadAllSchedules();
-    document.getElementById("weeklySystem").style.display="block";
-    let html=`<table class="system-table"><tr><th>יום</th><th>שעות</th>`; 
-    cars.forEach(c=>html+=`<th>${c}</th>`); 
-    html+=`</tr>`;
-
-    for(let day of daysOrder){
-        const requests = personalSchedules.filter(r=>r.day===day);
-        if(!requests.length) continue;
-        let intervals=[];
-        requests.forEach(r=>{
-            let added=false;
-            for(let interval of intervals){
-                if(!(r.end<=interval.start||r.start>=interval.end)){
-                    interval.start=r.start<interval.start?r.start:interval.start;
-                    interval.end=r.end>interval.end?r.end:interval.end;
-                    interval.requests.push(r); added=true; break;
-                }
-            }
-            if(!added) intervals.push({start:r.start,end:r.end,requests:[r]});
-        });
-
-        intervals.forEach((interval,idx)=>{
-            html+=`<tr>`; if(idx===0) html+=`<td class="time-cell" rowspan="${intervals.length}">${day}</td>`;
-            html+=`<td class="time-cell">${interval.start}-${interval.end}</td>`;
-            const assigned={}; const assignedUsers=new Set();
-            const bluePriority=["אמא","איתי","אורי"];
-            const blueUser=bluePriority.find(u=>interval.requests.some(r=>r.username===u)&&!assignedUsers.has(u));
-            assigned["מאזדה כחולה"]=blueUser?[blueUser]:[]; if(blueUser) assignedUsers.add(blueUser);
-
-            let whiteUser=null;
-            const itiAssignedBlue=assignedUsers.has("איתי");
-            const shani=interval.requests.find(r=>r.username==="שני");
-            const iti=interval.requests.find(r=>r.username==="איתי");
-            if(shani){ if(itiAssignedBlue) whiteUser="שני";
-            else{ const shaniImportant=["עבודה","לימודים"].some(act=>shani.activity.toLowerCase().includes(act));
-            const itiImportant=iti?["עבודה","לימודים"].some(act=>iti.activity.toLowerCase().includes(act)):false;
-            if(shaniImportant||(!shaniImportant&&!itiImportant)) whiteUser="שני";
-            else if(itiImportant) whiteUser="איתי"; }}
-            else if(iti) whiteUser="איתי";
-
-            if(whiteUser){ assigned["מאזדה לבנה"]=[whiteUser]; assignedUsers.add(whiteUser);} else assigned["מאזדה לבנה"]=[];
-
-            if(interval.requests.some(r=>r.username==="אבא")&&!assignedUsers.has("אבא")){ assigned["טויוטה (אבא)"]=["אבא"]; assignedUsers.add("אבא"); } else assigned["טויוטה (אבא)"]=[];
-
-            assigned["אוטובוס"]=interval.requests.map(r=>r.username).filter(u=>!assignedUsers.has(u));
-            cars.forEach(c=>html+=`<td class="editable" contenteditable="true">${assigned[c].join(", ")}</td>`);
-            html+=`</tr>`;
-        });
-    }
-
-    html+=`</table>`; document.getElementById("systemTable").innerHTML=html; enableEditing();
-}
-
-// --- חשיפה גלובלית ---
+/* ---------- גלובלי ---------- */
 window.addActivity=addActivity;
 window.deleteActivity=deleteActivity;
 window.saveSchedule=saveSchedule;
 window.generateWeeklyTableFinal=generateWeeklyTableFinal;
 </script>
-
 </body>
 </html>
