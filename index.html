@@ -120,21 +120,22 @@ const daysOrder=["ראשון","שני","שלישי","רביעי","חמישי","�
 const cars=["מאזדה לבנה","מאזדה כחולה","טויוטה (אבא)","אוטובוס"];
 let activities=[];
 
-/* ---------- שעון (כאן!) ---------- */
-flatpickr("#start",{
+flatpickr("#start", {
     enableTime: true,
     noCalendar: true,
     dateFormat: "H:i",
     time_24hr: true,
-    minuteIncrement: 1
+    minuteIncrement: 1,
+    allowInput: true
 });
 
-flatpickr("#end",{
+flatpickr("#end", {
     enableTime: true,
     noCalendar: true,
     dateFormat: "H:i",
     time_24hr: true,
-    minuteIncrement: 1
+    minuteIncrement: 1,
+    allowInput: true
 });
 
 /* ---------- עזר ---------- */
