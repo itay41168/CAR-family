@@ -155,20 +155,42 @@ function addActivity(){
   render(); clearForm();
 }
 
-function render(){
-  activities.sort((a,b)=>
-    daysOrder.indexOf(a.day)-daysOrder.indexOf(b.day)||
+function render() {
+  // מיון הפעילויות
+  activities.sort((a, b) =>
+    daysOrder.indexOf(a.day) - daysOrder.indexOf(b.day) ||
     a.start.localeCompare(b.start)
   );
-  tableBody.innerHTML="";
-  activities.forEach((x,i)=>{
-    tableBody.innerHTML+=`
-    <tr>
-      <td>${x.day}</td><td>${x.start}</td><td>${x.end}</td><td>${x.activity}</td>
-      <td><button onclick="deleteActivity(${i})">❌</button></td>
-    </tr>`;
+
+  // ניקוי הטבלה
+  tableBody.innerHTML = "";
+
+  // קבוצה לפי יום
+  const activitiesByDay = {};
+  activities.forEach(a => {
+    if (!activitiesByDay[a.day]) activitiesByDay[a.day] = [];
+    activitiesByDay[a.day].push(a);
   });
+
+  // בניית הטבלה
+  for (const day of daysOrder) {
+    const dayActivities = activitiesByDay[day];
+    if (!dayActivities) continue;
+
+    dayActivities.forEach((act, idx) => {
+      tableBody.innerHTML += `
+        <tr>
+          ${idx === 0 ? `<td rowspan="${dayActivities.length}">${day}</td>` : ""}
+          <td>${act.start}</td>
+          <td>${act.end}</td>
+          <td>${act.activity}</td>
+          <td><button onclick="deleteActivity(${activities.indexOf(act)})">❌</button></td>
+        </tr>
+      `;
+    });
+  }
 }
+
 
 function deleteActivity(i){ activities.splice(i,1); render(); }
 function clearForm(){ day.value=start.value=end.value=activity.value=""; }
@@ -200,76 +222,138 @@ function enableEditing(){
   });
 }
 
-async function generateWeeklyTableFinal(){
-  const personalSchedules=await loadAllSchedules();
-  weeklySystem.style.display="block";
+async function generateWeeklyTableFinal() {
+  const personalSchedules = await loadAllSchedules();
+  weeklySystem.style.display = "block";
 
-  let html=`<table class="system-table"><tr><th>יום</th><th>שעות</th>`;
-  cars.forEach(c=>html+=`<th>${c}</th>`); html+=`</tr>`;
+  let html = `<table class="system-table">
+    <tr>
+      <th>יום</th>
+      <th>שעות</th>`;
+  cars.forEach(c => html += `<th>${c}</th>`);
+  html += `</tr>`;
 
-  for(const day of daysOrder){
-    const requests=personalSchedules
-      .filter(r=>r.day===day)
-      .sort((a,b)=>a.start.localeCompare(b.start));
-    if(!requests.length) continue;
+  for (const day of daysOrder) {
+    const requests = personalSchedules
+      .filter(r => r.day === day)
+      .sort((a,b) => a.start.localeCompare(b.start));
 
-    let intervals=[];
-    requests.forEach(r=>{
-      let added=false;
-      for(let i of intervals){
-        if(!(r.end<=i.start||r.start>=i.end)){
-          i.start=r.start<i.start?r.start:i.start;
-          i.end=r.end>i.end?r.end:i.end;
-          i.requests.push(r); added=true; break;
-        }
-      }
-      if(!added) intervals.push({start:r.start,end:r.end,requests:[r]});
+    if (!requests.length) continue;
+
+    /* ---------- יצירת intervals חכמים ---------- */
+    const events = [];
+    requests.forEach(r => {
+      events.push({ time: r.start, type: "start", request: r });
+      events.push({ time: r.end,   type: "end",   request: r });
     });
+    events.sort((a,b) => a.time.localeCompare(b.time) || (a.type==="start"? -1:1));
 
-    intervals.sort((a,b)=>a.start.localeCompare(b.start));
 
-    intervals.forEach((intv,idx)=>{
-      html+=`<tr>`;
-      if(idx===0) html+=`<td rowspan="${intervals.length}" class="time-cell">${day}</td>`;
-      html+=`<td class="time-cell">${intv.start}-${intv.end}</td>`;
+    const MAX_OVERLAP_MINUTES = 200; // שעתיים
 
-      const assigned={},used=new Set();
+let intervals = [];
+let active = new Set();
+let lastTime = null;
 
-      const bluePriority=["אמא","איתי","אורי"];
-      const blue=bluePriority.find(u=>intv.requests.some(r=>r.username===u)&&!used.has(u));
-      assigned["מאזדה כחולה"]=blue?[blue]:[]; if(blue) used.add(blue);
+for (const ev of events) {
+  if (lastTime !== null && lastTime !== ev.time && active.size > 0) {
 
-      let white=null;
-      const itiBlue=used.has("איתי");
-      const shani=intv.requests.find(r=>r.username==="שני");
-      const iti=intv.requests.find(r=>r.username==="איתי");
-      if(shani){
-        if(itiBlue) white="שני";
-        else{
+    // רק איחוד של עד שתי בקשות
+    if (active.size <= 2) {
+      const lastInterval = intervals[intervals.length - 1];
+
+      // בדיקה: יש אינטרוול קודם, מספר בקשות <=2 והפרש לא גדול מדי
+      if (
+        lastInterval &&
+        lastInterval.requests.length <= 2 &&
+        lastInterval.end === lastTime &&
+        (toMin(ev.time) - toMin(lastInterval.start)) <= MAX_OVERLAP_MINUTES
+      ) {
+        // מאחד עם הקודם
+        lastInterval.end = ev.time;
+        active.forEach(r => {
+          if (!lastInterval.requests.includes(r)) lastInterval.requests.push(r);
+        });
+      } else {
+        // אינטרוול חדש
+        intervals.push({ start: lastTime, end: ev.time, requests: Array.from(active) });
+      }
+
+    } else {
+      // אם יותר משתי בקשות – תמיד אינטרוול חדש
+      intervals.push({ start: lastTime, end: ev.time, requests: Array.from(active) });
+    }
+  }
+
+  if (ev.type === "start") active.add(ev.request);
+  else active.delete(ev.request);
+
+  lastTime = ev.time;
+}
+
+
+    /* ---------- יצירת הטבלה ---------- */
+    intervals.forEach((intv, idx) => {
+      html += `<tr>`;
+      if (idx === 0) html += `<td rowspan="${intervals.length}" class="time-cell">${day}</td>`;
+      html += `<td class="time-cell">${intv.start}-${intv.end}</td>`;
+
+      const users = [...new Set(intv.requests.map(r => r.username))];
+      const used = new Set();
+      const assigned = {};
+
+      /* ---------- מאזדה כחולה ---------- */
+      const bluePriority = ["אמא","איתי","אורי"];
+      const blue = bluePriority.find(u => users.includes(u) && !used.has(u));
+      assigned["מאזדה כחולה"] = blue ? [blue] : [];
+      if (blue) used.add(blue);
+
+      /* ---------- מאזדה לבנה ---------- */
+      let white = null;
+      const itiBlue = used.has("איתי");
+      const shani = intv.requests.find(r=>r.username==="שני");
+      const iti   = intv.requests.find(r=>r.username==="איתי");
+
+      if (shani && !used.has("שני")) {
+        if (itiBlue) white="שני";
+        else {
           const sImp=["עבודה","לימודים"].some(x=>shani.activity.includes(x));
           const iImp=iti?["עבודה","לימודים"].some(x=>iti.activity.includes(x)):false;
           if(sImp||(!sImp&&!iImp)) white="שני";
-          else if(iImp) white="איתי";
+          else if(iImp&&!used.has("איתי")) white="איתי";
         }
-      } else if(iti) white="איתי";
+      } else if(iti && !used.has("איתי")) white="איתי";
 
-      assigned["מאזדה לבנה"]=white?[white]:[]; if(white) used.add(white);
+      assigned["מאזדה לבנה"] = white ? [white] : [];
+      if(white) used.add(white);
 
-      if(intv.requests.some(r=>r.username==="אבא")&&!used.has("אבא")){
-        assigned["טויוטה (אבא)"]=["אבא"]; used.add("אבא");
-      } else assigned["טויוטה (אבא)"]=[];
+      /* ---------- תיקון סופי: להעביר את איתי ללבן אם פנוי ---------- */
+      if (assigned["מאזדה כחולה"].includes("איתי") && assigned["מאזדה לבנה"].length===0) {
+        assigned["מאזדה כחולה"] = [];
+        assigned["מאזדה לבנה"] = ["איתי"];
+      }
 
-      assigned["אוטובוס"]=intv.requests.map(r=>r.username).filter(u=>!used.has(u));
+      /* ---------- טויוטה אבא ---------- */
+      if(users.includes("אבא") && !used.has("אבא")) {
+        assigned["טויוטה (אבא)"] = ["אבא"];
+        used.add("אבא");
+      } else assigned["טויוטה (אבא)"] = [];
 
+      /* ---------- אוטובוס ---------- */
+      assigned["אוטובוס"] = users.filter(u=>!used.has(u));
+
+      /* ---------- הדפסה ---------- */
       cars.forEach(c=>html+=`<td class="editable" contenteditable="true">${assigned[c].join(", ")}</td>`);
-      html+=`</tr>`;
+      html += `</tr>`;
     });
   }
 
-  html+=`</table>`;
-  systemTable.innerHTML=html;
+  html += `</table>`;
+  systemTable.innerHTML = html;
   enableEditing();
 }
+
+
 
 /* ---------- גלובלי ---------- */
 window.addActivity=addActivity;
