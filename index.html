@@ -75,7 +75,7 @@ th { background:#f0f0f0 }
 
 <input id="start" placeholder="שעת התחלה">
 <input id="end" placeholder="שעת סיום">
-<input id="activity" placeholder="פעילות">
+<input id="activity" placeholder="השימוש">
 <button onclick="addActivity()">➕ הוסף</button>
 </div>
 
@@ -125,8 +125,14 @@ flatpickr("#start", {
     noCalendar: true,
     dateFormat: "H:i",
     time_24hr: true,
-    minuteIncrement: 1,
-    allowInput: true
+    minuteIncrement: 5,
+    allowInput: true,
+    onOpen: function(selectedDates, dateStr, instance) {
+        if (!instance.input.value) instance.input.placeholder = "שעת התחלה";
+    },
+    onClose: function(selectedDates, dateStr, instance) {
+        if (!instance.input.value) instance.input.placeholder = "שעת התחלה";
+    }
 });
 
 flatpickr("#end", {
@@ -134,9 +140,16 @@ flatpickr("#end", {
     noCalendar: true,
     dateFormat: "H:i",
     time_24hr: true,
-    minuteIncrement: 1,
-    allowInput: true
+    minuteIncrement: 5,
+    allowInput: true,
+    onOpen: function(selectedDates, dateStr, instance) {
+        if (!instance.input.value) instance.input.placeholder = "שעת סיום";
+    },
+    onClose: function(selectedDates, dateStr, instance) {
+        if (!instance.input.value) instance.input.placeholder = "שעת סיום";
+    }
 });
+
 
 /* ---------- עזר ---------- */
 const toMin=t=>{const[a,b]=t.split(":").map(Number);return a*60+b};
@@ -364,3 +377,4 @@ window.generateWeeklyTableFinal=generateWeeklyTableFinal;
 </script>
 </body>
 </html>
+
