@@ -7,6 +7,8 @@
 
 <!-- Flatpickr -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<!-- Flatpickr -->
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 
 <style>
 body {
@@ -95,8 +97,6 @@ th { background:#f0f0f0 }
 
 </div>
 
-<!-- Flatpickr -->
-<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 
 <!-- Firebase -->
 <script type="module">
@@ -120,9 +120,22 @@ const daysOrder=["ראשון","שני","שלישי","רביעי","חמישי","�
 const cars=["מאזדה לבנה","מאזדה כחולה","טויוטה (אבא)","אוטובוס"];
 let activities=[];
 
-/* ---------- שעון ---------- */
-flatpickr("#start",{enableTime:true,noCalendar:true,dateFormat:"H:i"});
-flatpickr("#end",{enableTime:true,noCalendar:true,dateFormat:"H:i"});
+/* ---------- שעון (כאן!) ---------- */
+flatpickr("#start",{
+    enableTime: true,
+    noCalendar: true,
+    dateFormat: "H:i",
+    time_24hr: true,
+    minuteIncrement: 1
+});
+
+flatpickr("#end",{
+    enableTime: true,
+    noCalendar: true,
+    dateFormat: "H:i",
+    time_24hr: true,
+    minuteIncrement: 1
+});
 
 /* ---------- עזר ---------- */
 const toMin=t=>{const[a,b]=t.split(":").map(Number);return a*60+b};
